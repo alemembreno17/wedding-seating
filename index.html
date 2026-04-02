@@ -77,28 +77,45 @@ function normalize(text) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ñ/g, "n");
+    .replace(/ñ/g, "n")
+    .replace(/[^\w\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 async function buscar() {
   const query = normalize(document.getElementById("search").value);
+  const resultDiv = document.getElementById("result");
+
+  if (!query) {
+    resultDiv.innerHTML = "";
+    return;
+  }
+
+  const queryTokens = query.split(" ");
   const res = await fetch(SHEET_URL);
   const data = await res.text();
 
   const rows = data.split("\n").slice(1);
-
   let matches = [];
 
   rows.forEach(row => {
     const [first, last, table] = row.split(",");
-    const full = normalize(first + " " + last);
+    if (!first || !last || !table) return;
 
-    if (full.includes(query)) {
+    const fullName = normalize(first + " " + last);
+    const nameTokens = fullName.split(" ");
+
+    const isMatch = queryTokens.every(qToken =>
+      nameTokens.some(nToken =>
+        nToken.includes(qToken) || qToken.includes(nToken)
+      )
+    );
+
+    if (isMatch) {
       matches.push(`${first} ${last}, te corresponde la Mesa ${table}`);
     }
   });
-
-  const resultDiv = document.getElementById("result");
 
   if (matches.length === 0) {
     resultDiv.innerHTML = "No encontramos tu nombre. Por favor consulta con el personal.";
