@@ -1,87 +1,248 @@
-<script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs1SEM0eh5-lDDi74Ffo1NUuOh0CW-9GqstTWTxl16Tf6Qge0Va1U0PaztrH6e7LgUVLUlHppYzFiI/pub?output=csv";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Busca tu mesa</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background: #4b5b3b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
 
-function normalize(text) {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ñ/g, "n")
-    .replace(/[^\w\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
+    .container {
+      background: #f4efe5;
+      padding: 40px 28px;
+      border-radius: 30px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+    }
 
-function levenshtein(a, b) {
-  const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
-  for (let j = 1; j <= a.length; j++) {
-    matrix[0][j] = j;
-  }
+    h1 {
+      margin: 0 0 10px 0;
+      color: #2f3b27;
+      font-size: 2rem;
+    }
 
-  for (let i = 1; i <= b.length; i++) {
-    for (let j = 1; j <= a.length; j++) {
-      if (b.charAt(i - 1) === a.charAt(j - 1)) {
-        matrix[i][j] = matrix[i - 1][j - 1];
-      } else {
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j - 1] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j] + 1
-        );
+    .subtitle {
+      margin: 0 0 24px 0;
+      color: #5e5a50;
+      font-size: 1.05rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border-radius: 15px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 15px;
+      border-radius: 15px;
+      border: none;
+      background: #2f3b27;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      opacity: 0.96;
+    }
+
+    .result {
+      margin-top: 24px;
+      font-size: 20px;
+      color: #2f3b27;
+      line-height: 1.5;
+    }
+
+    .result-item {
+      background: rgba(255,255,255,0.7);
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .message {
+      color: #5e5a50;
+      font-size: 17px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Alejandro &amp; Valeria</h1>
+    <p class="subtitle">Busca tu mesa</p>
+
+    <input id="search" type="text" placeholder="Nombre y apellido" />
+    <button onclick="buscar()">Buscar</button>
+
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs1SEM0eh5-lDDi74Ffo1NUuOh0CW-9GqstTWTxl16Tf6Qge0Va1U0PaztrH6e7LgUVLUlHppYzFiI/pub?output=csv";
+
+    function normalize(text) {
+      return (text || "")
+        .toString()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/ñ/g, "n")
+        .replace(/[^\w\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function levenshtein(a, b) {
+      const m = a.length;
+      const n = b.length;
+      const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(
+            dp[i - 1][j] + 1,
+            dp[i][j - 1] + 1,
+            dp[i - 1][j - 1] + cost
+          );
+        }
+      }
+
+      return dp[m][n];
+    }
+
+    function tokenMatches(queryToken, nameToken) {
+      if (queryToken === nameToken) return true;
+
+      if (queryToken.length >= 4 && nameToken.startsWith(queryToken)) {
+        return true;
+      }
+
+      if (queryToken.length >= 5 && levenshtein(queryToken, nameToken) <= 1) {
+        return true;
+      }
+
+      return false;
+    }
+
+    function parseCsvLine(line) {
+      const result = [];
+      let current = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        const nextChar = line[i + 1];
+
+        if (char === '"') {
+          if (inQuotes && nextChar === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (char === "," && !inQuotes) {
+          result.push(current);
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+
+      result.push(current);
+      return result.map(cell => cell.trim());
+    }
+
+    async function buscar() {
+      const query = normalize(document.getElementById("search").value);
+      const resultDiv = document.getElementById("result");
+
+      if (!query) {
+        resultDiv.innerHTML = "";
+        return;
+      }
+
+      resultDiv.innerHTML = '<div class="message">Buscando...</div>';
+
+      try {
+        const response = await fetch(SHEET_URL);
+        if (!response.ok) {
+          throw new Error("No se pudo cargar la lista.");
+        }
+
+        const data = await response.text();
+        const rows = data.split(/\r?\n/).slice(1).filter(Boolean);
+        const queryTokens = query.split(" ").filter(Boolean);
+
+        let matches = [];
+
+        rows.forEach((row) => {
+          const columns = parseCsvLine(row);
+
+          const first = columns[0] ? columns[0].trim() : "";
+          const last = columns[1] ? columns[1].trim() : "";
+          const table = columns[2] ? columns[2].trim() : "";
+
+          if (!first || !last || !table) return;
+
+          const fullName = normalize(first + " " + last);
+          const nameTokens = fullName.split(" ").filter(Boolean);
+
+          const isMatch = queryTokens.every((qToken) =>
+            nameTokens.some((nToken) => tokenMatches(qToken, nToken))
+          );
+
+          if (isMatch) {
+            matches.push({
+              name: first + " " + last,
+              table: table
+            });
+          }
+        });
+
+        matches.sort((a, b) => a.name.localeCompare(b.name, "es"));
+
+        if (matches.length === 0) {
+          resultDiv.innerHTML = '<div class="message">No encontramos tu nombre. Por favor consulta con el personal.</div>';
+        } else {
+          resultDiv.innerHTML = matches
+            .map(
+              (match) =>
+                '<div class="result-item">' +
+                match.name +
+                ', te corresponde la Mesa ' +
+                match.table +
+                "</div>"
+            )
+            .join("");
+        }
+      } catch (error) {
+        resultDiv.innerHTML = '<div class="message">Ocurrió un error al cargar la lista. Intenta de nuevo.</div>';
+        console.error(error);
       }
     }
-  }
-
-  return matrix[b.length][a.length];
-}
-
-function tokenMatches(queryToken, nameToken) {
-  if (queryToken === nameToken) return true;
-  if (nameToken.startsWith(queryToken) && queryToken.length >= 3) return true;
-  if (queryToken.length >= 4 && levenshtein(queryToken, nameToken) <= 1) return true;
-  return false;
-}
-
-async function buscar() {
-  const query = normalize(document.getElementById("search").value);
-  const resultDiv = document.getElementById("result");
-
-  if (!query) {
-    resultDiv.innerHTML = "";
-    return;
-  }
-
-  const queryTokens = query.split(" ").filter(Boolean);
-  const res = await fetch(SHEET_URL);
-  const data = await res.text();
-
-  const rows = data.split("\n").slice(1);
-  let matches = [];
-
-  rows.forEach(row => {
-    const columns = row.split(",");
-    const first = columns[0]?.trim();
-    const last = columns[1]?.trim();
-    const table = columns[2]?.trim();
-
-    if (!first || !last || !table) return;
-
-    const fullName = normalize(first + " " + last);
-    const nameTokens = fullName.split(" ").filter(Boolean);
-
-    const isMatch = queryTokens.every(qToken =>
-      nameTokens.some(nToken => tokenMatches(qToken, nToken))
-    );
-
-    if (isMatch) {
-      matches.push(`${first} ${last}, te corresponde la Mesa ${table}`);
-    }
-  });
-
-  if (matches.length === 0) {
-    resultDiv.innerHTML = "No encontramos tu nombre. Por favor consulta con el personal.";
-  } else {
-    resultDiv.innerHTML = matches.join("<br><br>");
-  }
-}
-</script>
+  </script>
+</body>
+</html>
