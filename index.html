@@ -1,74 +1,3 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Busca tu mesa</title>
-
-<style>
-body {
-  margin: 0;
-  font-family: serif;
-  background: #4b5b3b;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-
-.container {
-  background: #f4efe5;
-  padding: 40px;
-  border-radius: 30px;
-  max-width: 500px;
-  width: 90%;
-  text-align: center;
-}
-
-h1 {
-  margin-bottom: 10px;
-  color: #2f3b27;
-}
-
-input {
-  width: 100%;
-  padding: 15px;
-  border-radius: 15px;
-  border: 1px solid #ccc;
-  margin-top: 20px;
-  font-size: 16px;
-}
-
-button {
-  margin-top: 15px;
-  width: 100%;
-  padding: 15px;
-  border-radius: 15px;
-  border: none;
-  background: #2f3b27;
-  color: white;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.result {
-  margin-top: 20px;
-  font-size: 20px;
-}
-</style>
-</head>
-
-<body>
-<div class="container">
-  <h1>Alejandro & Valeria</h1>
-  <p>Busca tu mesa</p>
-
-  <input id="search" placeholder="Nombre y apellido"/>
-  <button onclick="buscar()">Buscar</button>
-
-  <div class="result" id="result"></div>
-</div>
-
 <script>
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs1SEM0eh5-lDDi74Ffo1NUuOh0CW-9GqstTWTxl16Tf6Qge0Va1U0PaztrH6e7LgUVLUlHppYzFiI/pub?output=csv";
 
@@ -83,6 +12,36 @@ function normalize(text) {
     .trim();
 }
 
+function levenshtein(a, b) {
+  const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
+}
+
+function tokenMatches(queryToken, nameToken) {
+  if (queryToken === nameToken) return true;
+  if (nameToken.startsWith(queryToken) && queryToken.length >= 3) return true;
+  if (queryToken.length >= 4 && levenshtein(queryToken, nameToken) <= 1) return true;
+  return false;
+}
+
 async function buscar() {
   const query = normalize(document.getElementById("search").value);
   const resultDiv = document.getElementById("result");
@@ -92,7 +51,7 @@ async function buscar() {
     return;
   }
 
-  const queryTokens = query.split(" ");
+  const queryTokens = query.split(" ").filter(Boolean);
   const res = await fetch(SHEET_URL);
   const data = await res.text();
 
@@ -100,16 +59,18 @@ async function buscar() {
   let matches = [];
 
   rows.forEach(row => {
-    const [first, last, table] = row.split(",");
+    const columns = row.split(",");
+    const first = columns[0]?.trim();
+    const last = columns[1]?.trim();
+    const table = columns[2]?.trim();
+
     if (!first || !last || !table) return;
 
     const fullName = normalize(first + " " + last);
-    const nameTokens = fullName.split(" ");
+    const nameTokens = fullName.split(" ").filter(Boolean);
 
     const isMatch = queryTokens.every(qToken =>
-      nameTokens.some(nToken =>
-        nToken.includes(qToken) || qToken.includes(nToken)
-      )
+      nameTokens.some(nToken => tokenMatches(qToken, nToken))
     );
 
     if (isMatch) {
@@ -124,6 +85,3 @@ async function buscar() {
   }
 }
 </script>
-
-</body>
-</html>
