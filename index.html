@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Busca tu mesa</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: serif;
+  background: #4b5b3b;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  background: #f4efe5;
+  padding: 40px;
+  border-radius: 30px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 10px;
+  color: #2f3b27;
+}
+
+input {
+  width: 100%;
+  padding: 15px;
+  border-radius: 15px;
+  border: 1px solid #ccc;
+  margin-top: 20px;
+  font-size: 16px;
+}
+
+button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 15px;
+  border-radius: 15px;
+  border: none;
+  background: #2f3b27;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.result {
+  margin-top: 20px;
+  font-size: 20px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>Alejandro & Valeria</h1>
+  <p>Busca tu mesa</p>
+
+  <input id="search" placeholder="Nombre y apellido"/>
+  <button onclick="buscar()">Buscar</button>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRs1SEM0eh5-lDDi74Ffo1NUuOh0CW-9GqstTWTxl16Tf6Qge0Va1U0PaztrH6e7LgUVLUlHppYzFiI/pub?output=csv";
+
+function normalize(text) {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ñ/g, "n");
+}
+
+async function buscar() {
+  const query = normalize(document.getElementById("search").value);
+  const res = await fetch(SHEET_URL);
+  const data = await res.text();
+
+  const rows = data.split("\n").slice(1);
+
+  let matches = [];
+
+  rows.forEach(row => {
+    const [first, last, table] = row.split(",");
+    const full = normalize(first + " " + last);
+
+    if (full.includes(query)) {
+      matches.push(`${first} ${last}, te corresponde la Mesa ${table}`);
+    }
+  });
+
+  const resultDiv = document.getElementById("result");
+
+  if (matches.length === 0) {
+    resultDiv.innerHTML = "No encontramos tu nombre. Por favor consulta con el personal.";
+  } else {
+    resultDiv.innerHTML = matches.join("<br><br>");
+  }
+}
+</script>
+
+</body>
+</html>
