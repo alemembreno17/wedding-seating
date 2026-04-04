@@ -332,16 +332,15 @@
 
         const matchedTables = [...new Set(matchedGuests.map(g => g.table))];
 
-        const groupedTables = matchedTables.map((tableNumber) => {
-          const guestsAtTable = allGuests
-            .filter(g => g.table === tableNumber)
-            .sort((a, b) => a.fullName.localeCompare(b.fullName, "es"));
+const groupedTables = matchedTables.map((tableNumber) => {
+  const guestsAtTable = allGuests
+    .filter(g => g.table === tableNumber); // keep original order
 
-          return {
-            table: tableNumber,
-            guests: guestsAtTable
-          };
-        });
+  return {
+    table: tableNumber,
+    guests: guestsAtTable
+  };
+});
 
         groupedTables.sort((a, b) => {
           const aNum = Number(a.table);
