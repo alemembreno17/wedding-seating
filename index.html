@@ -3,97 +3,182 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Busca tu mesa</title>
+  <title>Find Your Seat</title>
+
   <style>
+    :root {
+      --bg: #F5F4E4;
+      --text: #3F4423;
+      --border: #6B7050;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
-      background: #4b5b3b;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Figtree", Arial, sans-serif;
+      min-height: 100vh;
+    }
+
+    .page {
+      min-height: 100vh;
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 20px;
-      box-sizing: border-box;
+      align-items: flex-start;
+      padding: 48px 24px 64px;
     }
 
     .container {
-      background: #f4efe5;
-      padding: 40px 28px;
-      border-radius: 30px;
-      max-width: 520px;
       width: 100%;
+      max-width: 560px;
       text-align: center;
-      box-sizing: border-box;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.15);
+    }
+
+    .date {
+      font-family: "Fields Display", Georgia, serif;
+      font-size: 18px;
+      letter-spacing: 0.04em;
+      margin: 48px 0 28px;
+      color: var(--text);
     }
 
     h1 {
-      margin: 0 0 10px 0;
-      color: #2f3b27;
-      font-size: 2rem;
+      font-family: "Fields Display", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(42px, 8vw, 68px);
+      line-height: 1;
+      letter-spacing: -0.02em;
+      margin: 0 0 34px;
+      color: var(--text);
     }
 
-    .subtitle {
-      margin: 0 0 24px 0;
-      color: #5e5a50;
-      font-size: 1.05rem;
+    .search-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      align-items: center;
     }
 
     input {
       width: 100%;
-      padding: 15px;
-      border-radius: 15px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-      box-sizing: border-box;
+      max-width: 470px;
+      height: 64px;
+      border-radius: 999px;
+      border: 2px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      text-align: center;
+      font-family: "Figtree", Arial, sans-serif;
+      font-size: 18px;
+      outline: none;
+      padding: 0 24px;
+    }
+
+    input::placeholder {
+      color: rgba(63, 68, 35, 0.75);
     }
 
     button {
-      margin-top: 15px;
       width: 100%;
-      padding: 15px;
-      border-radius: 15px;
+      max-width: 470px;
+      height: 64px;
       border: none;
-      background: #2f3b27;
-      color: white;
-      font-size: 16px;
+      border-radius: 999px;
+      background: var(--text);
+      color: var(--bg);
+      font-family: "Figtree", Arial, sans-serif;
+      font-size: 20px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
       cursor: pointer;
+      transition: opacity 0.2s ease;
     }
 
     button:hover {
-      opacity: 0.96;
+      opacity: 0.95;
     }
 
-    .result {
-      margin-top: 24px;
+    .results {
+      margin-top: 34px;
+    }
+
+    .table-block {
+      margin-top: 26px;
+    }
+
+    .table-title {
+      font-family: "Figtree", Arial, sans-serif;
+      font-weight: 700;
+      font-size: 28px;
+      line-height: 1.1;
+      margin: 0 0 10px;
+      color: var(--text);
+    }
+
+    .guest-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .guest-list li {
+      font-family: "Figtree", Arial, sans-serif;
       font-size: 20px;
-      color: #2f3b27;
-      line-height: 1.5;
-    }
-
-    .result-item {
-      background: rgba(255,255,255,0.7);
-      border-radius: 18px;
-      padding: 14px 16px;
-      margin-bottom: 12px;
+      line-height: 1.35;
+      color: var(--text);
+      margin: 0;
     }
 
     .message {
-      color: #5e5a50;
-      font-size: 17px;
+      font-family: "Figtree", Arial, sans-serif;
+      font-size: 18px;
+      line-height: 1.4;
+      color: var(--text);
+      margin-top: 10px;
+    }
+
+    @media (max-width: 480px) {
+      .page {
+        padding: 32px 18px 48px;
+      }
+
+      .date {
+        margin-top: 32px;
+        font-size: 16px;
+      }
+
+      input,
+      button {
+        height: 60px;
+      }
+
+      .guest-list li {
+        font-size: 18px;
+      }
+
+      .table-title {
+        font-size: 24px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Alejandro &amp; Valeria</h1>
-    <p class="subtitle">Busca tu mesa</p>
+  <div class="page">
+    <div class="container">
+      <div class="date">XVIII · IV · MMXXVI</div>
+      <h1>Find Your Seat</h1>
 
-    <input id="search" type="text" placeholder="Nombre y apellido" />
-    <button onclick="buscar()">Buscar</button>
+      <div class="search-wrap">
+        <input id="search" type="text" placeholder="Escribe tu nombre" />
+        <button onclick="buscar()">Buscar</button>
+      </div>
 
-    <div class="result" id="result"></div>
+      <div class="results" id="result"></div>
+    </div>
   </div>
 
   <script>
@@ -175,6 +260,15 @@
       return result.map(cell => cell.trim());
     }
 
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
     async function buscar() {
       const query = normalize(document.getElementById("search").value);
       const resultDiv = document.getElementById("result");
@@ -196,53 +290,96 @@
         const rows = data.split(/\r?\n/).slice(1).filter(Boolean);
         const queryTokens = query.split(" ").filter(Boolean);
 
-        let matches = [];
+        const allGuests = [];
+        const matchedGuests = [];
 
         rows.forEach((row) => {
           const columns = parseCsvLine(row);
-
           const first = columns[0] ? columns[0].trim() : "";
           const last = columns[1] ? columns[1].trim() : "";
           const table = columns[2] ? columns[2].trim() : "";
 
           if (!first || !last || !table) return;
 
-          const fullName = normalize(first + " " + last);
-          const nameTokens = fullName.split(" ").filter(Boolean);
+          const fullName = `${first} ${last}`;
+          const normalizedFullName = normalize(fullName);
+          const nameTokens = normalizedFullName.split(" ").filter(Boolean);
+
+          const guest = {
+            first,
+            last,
+            fullName,
+            normalizedFullName,
+            table
+          };
+
+          allGuests.push(guest);
 
           const isMatch = queryTokens.every((qToken) =>
             nameTokens.some((nToken) => tokenMatches(qToken, nToken))
           );
 
           if (isMatch) {
-            matches.push({
-              name: first + " " + last,
-              table: table
-            });
+            matchedGuests.push(guest);
           }
         });
 
-        matches.sort((a, b) => a.name.localeCompare(b.name, "es"));
-
-        if (matches.length === 0) {
-          resultDiv.innerHTML = '<div class="message">No encontramos tu nombre. Por favor consulta con el personal.</div>';
-        } else {
-          resultDiv.innerHTML = matches
-            .map(
-              (match) =>
-                '<div class="result-item">' +
-                match.name +
-                ', te corresponde la Mesa ' +
-                match.table +
-                "</div>"
-            )
-            .join("");
+        if (matchedGuests.length === 0) {
+          resultDiv.innerHTML =
+            '<div class="message">No encontramos tu nombre. Por favor consulta con el personal.</div>';
+          return;
         }
+
+        const matchedTables = [...new Set(matchedGuests.map(g => g.table))];
+
+        const groupedTables = matchedTables.map((tableNumber) => {
+          const guestsAtTable = allGuests
+            .filter(g => g.table === tableNumber)
+            .sort((a, b) => a.fullName.localeCompare(b.fullName, "es"));
+
+          return {
+            table: tableNumber,
+            guests: guestsAtTable
+          };
+        });
+
+        groupedTables.sort((a, b) => {
+          const aNum = Number(a.table);
+          const bNum = Number(b.table);
+
+          if (!Number.isNaN(aNum) && !Number.isNaN(bNum)) {
+            return aNum - bNum;
+          }
+
+          return a.table.localeCompare(b.table, "es");
+        });
+
+        resultDiv.innerHTML = groupedTables.map((group) => {
+          const guestItems = group.guests
+            .map(guest => `<li>${escapeHtml(guest.fullName)}</li>`)
+            .join("");
+
+          return `
+            <div class="table-block">
+              <div class="table-title">Mesa ${escapeHtml(group.table)}</div>
+              <ul class="guest-list">
+                ${guestItems}
+              </ul>
+            </div>
+          `;
+        }).join("");
       } catch (error) {
-        resultDiv.innerHTML = '<div class="message">Ocurrió un error al cargar la lista. Intenta de nuevo.</div>';
         console.error(error);
+        resultDiv.innerHTML =
+          '<div class="message">Ocurrió un error al cargar la lista. Intenta de nuevo.</div>';
       }
     }
+
+    document.getElementById("search").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        buscar();
+      }
+    });
   </script>
 </body>
 </html>
